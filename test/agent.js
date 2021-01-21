@@ -211,6 +211,103 @@ describe('ServiceAgent', () => {
             expect(json.host).to.equal('localhost:' + serverPort);
         });
 
+        it('handles custom services with a port in url with setup intervalSeconds', async () => {
+
+            const json = await new Promise((resolve, reject) => {
+
+                Request({ url: 'http://localhost:100/', agentClass: ServiceAgent, agentOptions: { service: '_test._tcp.', intervalSeconds: 0 }, pool: {}, json: true }, (err, res, data) => {
+
+                    return err ? reject(err) : resolve(data);
+                });
+            });
+
+            expect(json.host).to.equal('localhost:' + serverPort);
+        });
+
+        it('handles custom services with a port in url with setup invalid intervalSeconds, type string', async () => {
+
+            try {
+                await new Promise((resolve, reject) => {
+
+                    Request({ url: 'http://localhost:100/', agentClass: ServiceAgent, agentOptions: { service: '_test._tcp.', intervalSeconds: '4' }, pool: {}, json: true }, (err, res, data) => {
+
+                        return err ? reject(err) : resolve(data);
+                    });
+                });
+            }
+            catch (err) {
+                expect(err.message).to.equal('intervalSeconds option must be a number');
+            }
+        });
+
+        it('handles custom services with a port in url with setup invalid intervalSeconds, a negative number', async () => {
+
+            try {
+                await new Promise((resolve, reject) => {
+
+                    Request({ url: 'http://localhost:100/', agentClass: ServiceAgent, agentOptions: { service: '_test._tcp.', intervalSeconds: -1 }, pool: {}, json: true }, (err, res, data) => {
+
+                        return err ? reject(err) : resolve(data);
+                    });
+                });
+            }
+            catch (err) {
+                expect(err.message).to.equal('invalid intervalSeconds');
+            }
+        });
+
+        it('mapped an empty addrs', async () => {
+
+            try {
+                await new Promise((resolve, reject) => {
+
+                    Request({ url: 'http://not.there/', agentClass: ServiceAgent, agentOptions: { service: '_zero._tcp' }, pool: {}, json: true }, (err, res, data) => {
+
+                        return err ? reject(err) : resolve(data);
+                    });
+                });
+            }
+            catch (err) {
+                expect(err.message).to.equal('getaddrinfo ENOTFOUND not.there');
+            }
+        });
+
+        it('record error log', async () => {
+
+            const json = await new Promise((resolve, reject) => {
+
+                Request({ url: 'http://localhost:100/', agentClass: ServiceAgent, agentOptions: {
+                    service: '_test._tcp', logger: { debug: true, warn: true,
+                        info: true,
+                        error: () => {},
+                        log: true }
+                }, pool: {}, json: true }, (err, res, data) => {
+
+                    return err ? reject(err) : resolve(data);
+                });
+            });
+
+            expect(json.host).to.equal('localhost:' + serverPort);
+        });
+
+        it('record error log but setup faild', async () => {
+
+            try {
+                await new Promise((resolve, reject) => {
+
+                    Request({ url: 'http://localhost:100/', agentClass: ServiceAgent, agentOptions: {
+                        service: '_test._tcp', logger: { debug: true, warn: true }
+                    }, pool: {}, json: true }, (err, res, data) => {
+
+                        return err ? reject(err) : resolve(data);
+                    });
+                });
+            }
+            catch (err) {
+                expect(err.message).to.equal('logger option must be a object and implement debug, warn, info, error, log');
+            }
+        });
+
         it('handles custom services with with missing trailing dot', async () => {
 
             const json = await new Promise((resolve, reject) => {
